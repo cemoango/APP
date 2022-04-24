@@ -1,0 +1,56 @@
+using APP.Configurations;
+using APP.Data.Context;
+using APP.Extensions;
+using APP.MiddlewareExtensions;
+using APP.SubscribeTableDependencies;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+//builder.Services.AddScoped<Func<APPDBContext>>((ctx) => {
+// //   var options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+// var options = new DbContextOptionsBuilder<APPDBContext>()
+//            .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+//            .Options;
+
+//    return () => (APPDBContext)Activator.CreateInstance(typeof(APPDBContext), options);
+//}       
+//);
+builder.Services.AddDbContextFactory<APPDBContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.ResolveDependenciesSIJ();
+builder.Services.ResolveDependencies();
+
+builder.Services.AddSignalR();
+
+var app = builder.Build();
+var connectionString = app.Configuration.GetConnectionString("DefaultConnection");
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapHub<Flight_ScheduleHub>("/flight_ScheduleHub");
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.UseSqlTableDependency<SubscribeFlight_ScheduleTableDependency>(connectionString);
+
+app.Run();

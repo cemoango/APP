@@ -1,0 +1,120 @@
+﻿@model IEnumerable<APP.ViewModels.Flight_ScheduleViewModels>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+
+<input type="checkbox" checked data-style="btn-group-justified">
+
+<span class="switcher switcher-1">
+   <input type="checkbox" id="switcher-1">
+   <label for="switcher-1"></label>
+</span>
+<span class="switcher switcher-2">
+   <input type="checkbox" id="switcher-2">
+   <label for="switcher-2"></label>
+</span>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>
+                Horario
+            </th>
+            <th>
+                Voos
+            </th>
+            <th>
+                Aeroporto
+            </th>
+            <th>
+                Estado
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="tblFlight_Schedule">
+@foreach (var item in Model) {
+        <tr scope="row">
+            <td>
+                @Html.DisplayFor(modelItem => item.time)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.flight) | 
+                @Html.DisplayFor(modelItem => item.airline)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.airport)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.status)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id">Permission</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="/lib/microsoft/signalr/dist/browser/signalr.js"></script>  
+    <script type="text/javascript">  
+
+        var connection = new signalR.HubConnectionBuilder().withUrl("/flight_ScheduleHub").build();
+ 
+        connection.start().then(function (){
+                        InvokeFlight_Schedule();
+        }).catch(function (err) {
+               return console.error(err.toString());
+        });
+
+        function InvokeFlight_Schedule() {
+
+	connection.invoke("SendFlight_Schedule").catch(function (err) {
+               return console.error(err.toString());
+	});
+    }
+
+        connection.on("ReceivedFlight_Schedule", function (flight_Schedule) {
+
+	BindFlight_ScheduleToGrid(flight_Schedule);
+    });
+
+function BindFlight_ScheduleToGrid(flight_Schedule) {
+	$('#tblFlight_Schedule').empty();
+
+	var tr;
+	$.each(flight_Schedule, function (index, item) {
+   
+        console.log('${item.name}');
+		tr = $('<tr scope="row" id = "'+item.id+'">');
+		tr.append('<td>'+item.time+'</td>');
+		tr.append('<td>'+item.flight+' - '+item.airline+'</td>');
+		tr.append('<td>'+item.airport+'</td>');
+		tr.append('<td>'+item.status+'</td>');
+        tr.append('<td> <a href="/Flight_Schedule/Change/'+item.id+'">Permission | </a>'+
+        '<a href="/Flight_Schedule/Delete/'+item.id+'">Delete</a></td>')
+        tr.append('<tr/>');
+		$('#tblFlight_Schedule').append(tr);
+                
+        if(item.status=='False')
+        {
+              var square = document.getElementById(item.id);
+              square.style.color = "white";
+              square.style.backgroundColor = "#8B0000";        
+        }
+	});
+}
+
+
+</script> 
+}
